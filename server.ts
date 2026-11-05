@@ -100,8 +100,7 @@ Task:
     const textPart = {
       text: promptText,
     };
-
-    const response = await ai.models.generateContent({
+const response = await generateWithRetry({({
       model: "gemini-3.8-flash",
       contents: { parts: [imagePart, textPart] },
       config: {
