@@ -11,13 +11,13 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout project
+      - name: Download Project
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -28,26 +28,38 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-- name: Setup Android SDK
-  uses: android-actions/setup-android@v3     
-  
-      - name: Install project dependencies
+      - name: Check Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls -la "$ANDROID_HOME/cmdline-tools"
+
+      - name: Install Android SDK packages
+        run: |
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort -V | tail -n 1)
+          echo "Using SDK Manager: $SDKMANAGER"
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses || true
+          set -o pipefail
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install Dependencies
         run: npm install
 
-      - name: Install Capacitor 6
-        run: npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+      - name: Install Capacitor
+        run: |
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
 
-      - name: Create Capacitor config
+      - name: Create Capacitor Config
         run: |
           echo '{"appId":"com.bhoomi.ojonkhata","appName":"Ojon Khata","webDir":"dist"}' > capacitor.config.json
 
-      - name: Build web application
+      - name: Build Web App
         run: npm run build
 
-      - name: Add Android platform
+      - name: Add Android
         run: npx cap add android
 
-      - name: Sync Android project
+      - name: Sync Android
         run: npx cap sync android
 
       - name: Build APK
