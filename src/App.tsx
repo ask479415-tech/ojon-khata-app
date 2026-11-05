@@ -166,9 +166,7 @@ try {
   json = JSON.parse(responseText);
 } catch {
   console.error('OCR Server Error:', responseText);
-  throw new Error(
-    OCR সার্ভার JSON পাঠায়নি। HTTP Status: ${response.status}
-  );
+    throw new Error("OCR Server JSON error. HTTP Status: " + response.status);
 }
 
       if (!response.ok || !json.success) {
