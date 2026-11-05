@@ -1,0 +1,8 @@
+{
+  "name": "ওজন খাতা - Smart Weight OCR & Calculator",
+  "description": "হাতে লেখা ওজনের তালিকা (1.5, 2, 3.5 কেজি) ক্যামেরা দিয়ে স্ক্যান করুন, সংখ্যা যাচাই ও সংশোধন করুন এবং স্বয়ংক্রিয়ভাবে মোট কেজি হিসাব করুন।",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
