@@ -13,21 +13,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT || 3000);
 
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+app.use(express.json({ limit: "30mb" }));
+app.use(express.urlencoded({ extended: true, limit: "30mb" }));
 
+// GEMINI CLIENT
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured.");
+    throw new Error("GEMINI_API_KEY পাওয়া যায়নি। Secrets পরীক্ষা করুন।");
   }
 
   return new GoogleGenAI({ apiKey });
 }
 
+// GEMINI RETRY
 async function generateWithRetry(request: any) {
   const ai = getGeminiClient();
 
@@ -58,26 +60,54 @@ async function generateWithRetry(request: any) {
   throw new Error("Gemini service unavailable.");
 }
 
-// IMAGE TO WEIGHT OCR API
+// HEALTH CHECK
+app.get("/api/health", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Ojon Khata API is running"
+  });
+});
+
+// IMAGE TO WEIGHT OCR
 app.post("/api/ocr-weights", async (req, res) => {
   try {
     const {
       imageBase64,
       mimeType = "image/jpeg",
       hint
-    } = req.body;
+    } = req.body || {};
 
-    if (!imageBase64) {
+    if (!imageBase64 || typeof imageBase64 !== "string") {
       return res.status(400).json({
         success: false,
-        error: "ছবি পাওয়া যায়নি।"
+        error: "ছবি পাওয়া যায়নি। আবার ছবি তুলুন।"
       });
     }
 
     const cleanBase64 = imageBase64.replace(
-      /^data:image\/[^;]+;base64,/,
+      /^data:image\/[a-zA-Z0-9.+-]+;base64,/,
       ""
     );
+
+    if (!cleanBase64) {
+      return res.status(400).json({
+        success: false,
+        error: "ছবির ডেটা খালি।"
+      });
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ];
+
+    if (!allowedTypes.includes(mimeType)) {
+      return res.status(400).json({
+        success: false,
+        error: "JPEG, PNG অথবা WEBP ছবি ব্যবহার করুন।"
+      });
+    }
 
     const imagePart = {
       inlineData: {
@@ -87,27 +117,37 @@ app.post("/api/ocr-weights", async (req, res) => {
     };
 
     const prompt = `
-ছবিতে হাতে লেখা ওজনের সংখ্যা পড়ুন।
+You are an expert handwritten weight reader.
 
-English এবং Bengali দুই ধরনের সংখ্যা চিনুন।
+Read every handwritten weight from this image.
 
-উদাহরণ:
+Both Bengali and English numbers must be recognized.
+
+Examples:
 1.5, 2, 3.5, 10
 ১.৫, ২, ৩.৫, ১০
 
-নিয়ম:
-1. ছবির সব ওজন খুঁজে বের করুন।
-2. উপর থেকে নিচে পড়ুন।
-3. একাধিক কলাম থাকলে সব পড়ুন।
-4. 1/2 হলে 0.5 করুন।
-5. 1 1/2 হলে 1.5 করুন।
-6. গ্রাম থাকলে KG-তে রূপান্তর করুন।
-7. কোনো সংখ্যা পরিষ্কার না হলে confidence low দিন।
-8. একই সংখ্যা দুবার থাকলে দুবারই রাখুন।
-9. কোনো সংখ্যা অনুমান করে বানাবেন না।
+Rules:
 
-সব ফলাফল JSON আকারে দিন।
-${hint ? `User hint: ${hint}` : ""}
+1. Read all visible weights.
+2. Read from top to bottom.
+3. Read every column.
+4. Do not skip any readable weight.
+5. Convert Bengali numerals into numeric values.
+6. Convert grams into kilograms.
+7. Example: 500 gram = 0.5 kg.
+8. Example: 1500 gram = 1.5 kg.
+9. Example: 1/2 kg = 0.5 kg.
+10. Example: 1 1/2 kg = 1.5 kg.
+11. Do not count headings, dates or unrelated numbers.
+12. Never invent unreadable numbers.
+13. Keep duplicate weights if they appear separately.
+14. Use low confidence when handwriting is unclear.
+15. All returned values must be in kilograms.
+
+User hint: ${hint || "No additional hint"}
+
+Return valid JSON only.
 `;
 
     const response = await generateWithRetry({
@@ -123,15 +163,16 @@ ${hint ? `User hint: ${hint}` : ""}
       ],
       config: {
         responseMimeType: "application/json",
-        systemInstruction: `
-You are an expert handwritten weight OCR reader.
-Read English and Bengali handwritten numbers carefully.
-Convert all weights into kilograms.
-Never invent unreadable numbers.
-Return valid JSON only.
-`,
+
+        systemInstruction:
+          "Read handwritten weight values carefully. " +
+          "Recognize Bengali and English numerals. " +
+          "Convert all weights to kilograms. " +
+          "Never invent numbers. Return valid JSON only.",
+
         responseSchema: {
           type: Type.OBJECT,
+
           properties: {
             weights: {
               type: Type.ARRAY,
@@ -145,7 +186,8 @@ Return valid JSON only.
                     type: Type.STRING
                   },
                   confidence: {
-                    type: Type.STRING
+                    type: Type.STRING,
+                    enum: ["high", "medium", "low"]
                   },
                   note: {
                     type: Type.STRING
@@ -158,41 +200,65 @@ Return valid JSON only.
                 ]
               }
             },
+
             detectedLanguage: {
               type: Type.STRING
             },
+
             summaryNote: {
               type: Type.STRING
             }
           },
+
           required: ["weights"]
         }
       }
     });
 
-    const responseText = response.text || "{}";
+    const responseText = response.text;
+
+    if (!responseText) {
+      throw new Error("AI থেকে কোনো ফলাফল পাওয়া যায়নি।");
+    }
+
     const parsedData = JSON.parse(responseText);
 
     if (!Array.isArray(parsedData.weights)) {
-      throw new Error("Invalid weight data returned by AI.");
+      throw new Error("AI-এর ফলাফল সঠিক নয়।");
     }
 
-    // Calculate total automatically
-    const totalKg = parsedData.weights.reduce(
-      (sum: number, item: any) => {
-        const value = Number(item.value);
-        return sum + (
-          Number.isFinite(value) && value >= 0 ? value : 0
+    // VALIDATE WEIGHTS
+    const weights = parsedData.weights
+      .filter((item: any) => {
+        return (
+          Number.isFinite(Number(item.value)) &&
+          Number(item.value) >= 0
         );
-      },
+      })
+      .map((item: any) => ({
+        value: Number(item.value),
+        originalText: String(item.originalText || ""),
+        confidence: ["high", "medium", "low"].includes(item.confidence)
+          ? item.confidence
+          : "medium",
+        note: String(item.note || "")
+      }));
+
+    // CALCULATE TOTAL KG
+    const totalKg = weights.reduce(
+      (sum: number, item: any) => sum + item.value,
       0
     );
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       data: {
-        ...parsedData,
-        totalKg: Number(totalKg.toFixed(3))
+        weights,
+        totalKg: Number(totalKg.toFixed(3)),
+        totalGram: Math.round(totalKg * 1000),
+        count: weights.length,
+        detectedLanguage: parsedData.detectedLanguage || "",
+        summaryNote: parsedData.summaryNote || ""
       }
     });
 
@@ -203,7 +269,6 @@ Return valid JSON only.
 
     const isApiKeyError =
       error?.status === 403 ||
-      error?.status === 400 ||
       message.includes("API_KEY_INVALID") ||
       message.includes("PERMISSION_DENIED");
 
@@ -233,7 +298,8 @@ app.get("/api/download-app-zip", async (_req, res) => {
             ".aistudio",
             ".DS_Store"
           ].includes(item) ||
-          item.endsWith(".zip")
+          item.endsWith(".zip") ||
+          item === ".env"
         ) {
           continue;
         }
@@ -243,6 +309,7 @@ app.get("/api/download-app-zip", async (_req, res) => {
 
         if (stat.isDirectory()) {
           const subFolder = zipFolder.folder(item);
+
           if (subFolder) {
             addDirToZip(fullPath, subFolder);
           }
@@ -257,29 +324,42 @@ app.get("/api/download-app-zip", async (_req, res) => {
     const buffer = await zip.generateAsync({
       type: "nodebuffer",
       compression: "DEFLATE",
-      compressionOptions: { level: 9 }
+      compressionOptions: {
+        level: 9
+      }
     });
 
     res.setHeader("Content-Type", "application/zip");
+
     res.setHeader(
       "Content-Disposition",
       'attachment; filename="ojon-khata-app.zip"'
     );
 
-    res.send(buffer);
+    return res.send(buffer);
 
   } catch (error) {
     console.error("ZIP ERROR:", error);
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       error: "ZIP তৈরি করা যায়নি।"
     });
   }
 });
 
+// UNKNOWN API ROUTE
+app.use("/api", (req, res) => {
+  return res.status(404).json({
+    success: false,
+    error: `API route not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
 // START SERVER
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+
     const { createServer } = await import("vite");
 
     const vite = await createServer({
@@ -293,6 +373,7 @@ async function startServer() {
     app.use(vite.middlewares);
 
   } else {
+
     app.use(express.static(path.join(__dirname, "dist")));
 
     app.get("*", (_req, res) => {
@@ -300,10 +381,8 @@ async function startServer() {
     });
   }
 
-  app.listen(Number(PORT), "0.0.0.0", () => {
-    console.log(
-      `Server listening on port ${PORT}`
-    );
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server listening on port ${PORT}`);
   });
 }
 
@@ -311,4 +390,3 @@ startServer().catch(error => {
   console.error("SERVER START ERROR:", error);
   process.exit(1);
 });
-          
