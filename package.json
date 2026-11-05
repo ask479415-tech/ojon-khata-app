@@ -12,11 +12,12 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@capacitor/core": "^8.6.0",
+    "@capacitor-mlkit/text-recognition": "^8.2.2",
     "@capacitor/android": "^8.6.0",
     "@capacitor/camera": "^8.2.6",
     "@capacitor/cli": "^8.6.0",
-    "@capacitor-mlkit/text-recognition": "^8.2.2",
+    "@capacitor/core": "^8.6.0",
+    "@google/genai": "^2.32.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/jszip": "^3.4.0",
     "@vitejs/plugin-react": "^6.1.1",
