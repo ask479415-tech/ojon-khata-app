@@ -1,8 +1,12 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6d852efc (Fix OCR plugin)
 import React, { useState } from 'react';
 import {
   Camera,
   CameraResultType,
+<<<<<<< HEAD
   CameraSource
 } from '@capacitor/camera';
 
@@ -26,6 +30,18 @@ interface Weight {
   value: number;
   originalText: string;
 }
+=======
+  CameraSource,
+} from '@capacitor/camera';
+import {
+  Camera as CameraIcon,
+  Image as ImageIcon,
+  RefreshCw,
+  X,
+  Check,
+  AlertCircle,
+} from 'lucide-react';
+>>>>>>> 6d852efc (Fix OCR plugin)
 
 interface CameraModalProps {
   isOpen: boolean;
@@ -94,6 +110,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({
   onClose,
   onCapture
 }) => {
+<<<<<<< HEAD
   const [image, setImage] = useState<string | null>(null);
   const [weights, setWeights] = useState<Weight[]>([]);
   const [loading, setLoading] = useState(false);
@@ -149,11 +166,43 @@ export const CameraModal: React.FC<CameraModalProps> = ({
         err?.message || 'ছবি পড়তে সমস্যা হয়েছে।'
       );
 
+=======
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  const openCamera = async () => {
+    setCameraError(null);
+    setLoading(true);
+
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+        width: 1800,
+      });
+
+      if (photo.dataUrl) {
+        setCapturedImage(photo.dataUrl);
+      } else {
+        setCameraError('ছবি পাওয়া যায়নি। আবার চেষ্টা করুন।');
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      setCameraError(
+        'ক্যামেরা চালু করা যায়নি। ক্যামেরার অনুমতি দিন অথবা গ্যালারি ব্যবহার করুন।'
+      );
+>>>>>>> 6d852efc (Fix OCR plugin)
     } finally {
       setLoading(false);
     }
   };
 
+<<<<<<< HEAD
   const updateWeight = (id: number, value: string) => {
     setWeights(previous =>
       previous.map(item =>
@@ -187,10 +236,49 @@ export const CameraModal: React.FC<CameraModalProps> = ({
 
   const finish = () => {
     onCapture(weights);
+=======
+  const openGallery = async () => {
+    setCameraError(null);
+    setLoading(true);
+
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos,
+        width: 1800,
+      });
+
+      if (photo.dataUrl) {
+        setCapturedImage(photo.dataUrl);
+      } else {
+        setCameraError('ছবি পাওয়া যায়নি।');
+      }
+    } catch (error) {
+      console.error('Gallery error:', error);
+      setCameraError('গ্যালারি থেকে ছবি নেওয়া যায়নি।');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmPhoto = () => {
+    if (!capturedImage) return;
+    onCapture(capturedImage);
+    setCapturedImage(null);
+    onClose();
+  };
+
+  const closeModal = () => {
+    setCapturedImage(null);
+    setCameraError(null);
+>>>>>>> 6d852efc (Fix OCR plugin)
     onClose();
   };
 
   return (
+<<<<<<< HEAD
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
 
       <div className="bg-white rounded-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
@@ -244,9 +332,61 @@ export const CameraModal: React.FC<CameraModalProps> = ({
                 size={30}
               />
               ছবি থেকে লেখা পড়া হচ্ছে...
+=======
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3">
+      <div className="w-full max-w-2xl bg-slate-900 rounded-3xl overflow-hidden border border-slate-700">
+
+        <div className="flex items-center justify-between p-4 bg-slate-800 text-white">
+          <div className="flex items-center gap-2">
+            <CameraIcon className="w-5 h-5 text-emerald-400" />
+            <h2 className="font-semibold text-lg">
+              {capturedImage ? 'ছবি প্রিভিউ' : 'ওজনের খাতার ছবি তুলুন'}
+            </h2>
+          </div>
+
+          <button onClick={closeModal} className="p-2 text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="bg-black min-h-[360px] flex items-center justify-center p-4">
+
+          {capturedImage ? (
+            <img
+              src={capturedImage}
+              alt="ওজনের খাতার ছবি"
+              className="max-h-[65vh] max-w-full object-contain rounded-xl"
+            />
+          ) : (
+            <div className="text-center text-white p-5">
+              {loading ? (
+                <>
+                  <RefreshCw className="w-10 h-10 mx-auto mb-4 animate-spin text-emerald-400" />
+                  <p>ক্যামেরা প্রস্তুত হচ্ছে...</p>
+                </>
+              ) : (
+                <>
+                  <CameraIcon className="w-16 h-16 mx-auto mb-4 text-emerald-400" />
+                  <p className="text-lg font-semibold mb-2">
+                    ওজনের কাগজটি প্রস্তুত রাখুন
+                  </p>
+                  <p className="text-sm text-slate-300">
+                    হাতে লেখা 1.5, 2, 3.5 KG পরিষ্কারভাবে ছবি তুলুন।
+                  </p>
+                </>
+              )}
+
+              {cameraError && (
+                <div className="mt-4 text-amber-400 text-sm flex items-center justify-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  {cameraError}
+                </div>
+              )}
+>>>>>>> 6d852efc (Fix OCR plugin)
             </div>
           )}
 
+<<<<<<< HEAD
           {error && (
             <div className="bg-red-50 text-red-700 p-3 rounded-lg">
               {error}
@@ -292,9 +432,27 @@ export const CameraModal: React.FC<CameraModalProps> = ({
               <button
                 onClick={() => deleteWeight(item.id)}
                 className="text-red-600 p-2"
+=======
+        <div className="p-4 flex flex-wrap items-center justify-center gap-3">
+
+          {capturedImage ? (
+            <>
+              <button
+                onClick={() => setCapturedImage(null)}
+                className="px-5 py-3 rounded-xl bg-slate-700 text-white flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                আবার তুলুন
+              </button>
+
+              <button
+                onClick={confirmPhoto}
+                className="px-5 py-3 rounded-xl bg-emerald-600 text-white font-semibold flex items-center gap-2"
+>>>>>>> 6d852efc (Fix OCR plugin)
               >
                 <Trash2 size={20} />
               </button>
+<<<<<<< HEAD
             </div>
           ))}
 
@@ -326,6 +484,30 @@ export const CameraModal: React.FC<CameraModalProps> = ({
           >
             হিসাব সংরক্ষণ করুন
           </button>
+=======
+            </>
+          ) : (
+            <>
+              <button
+                onClick={openCamera}
+                disabled={loading}
+                className="px-6 py-3 rounded-xl bg-emerald-600 text-white font-semibold flex items-center gap-2 disabled:opacity-50"
+              >
+                <CameraIcon className="w-5 h-5" />
+                ক্যামেরা খুলুন
+              </button>
+
+              <button
+                onClick={openGallery}
+                disabled={loading}
+                className="px-5 py-3 rounded-xl bg-slate-700 text-white flex items-center gap-2 disabled:opacity-50"
+              >
+                <ImageIcon className="w-5 h-5" />
+                গ্যালারি
+              </button>
+            </>
+          )}
+>>>>>>> 6d852efc (Fix OCR plugin)
 
         </div>
       </div>
