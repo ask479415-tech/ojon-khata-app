@@ -12,26 +12,11 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-<<<<<<< HEAD
     "@capacitor/core": "^8.6.0",
     "@capacitor/android": "^8.6.0",
     "@capacitor/camera": "^8.2.6",
     "@capacitor/cli": "^8.6.0",
     "@capacitor-mlkit/text-recognition": "^8.2.2",
-=======
-<<<<<<< HEAD
-    "@capacitor/core": "^6.2.1",
-    "@capacitor/android": "^6.2.1",
-    "@capacitor/camera": "^6.0.0",
-    "@capacitor-community/image-to-text": "6.0.1",
-=======
-    "@capacitor-mlkit/text-recognition": "^8.2.2",
-    "@capacitor/android": "^8.6.0",
-    "@capacitor/camera": "^8.2.6",
-    "@capacitor/cli": "^8.6.0",
-    "@capacitor/core": "^8.6.0",
->>>>>>> 6d852efc (Fix OCR plugin)
->>>>>>> 7ecbc83a (Fix OCR plugin)
     "@tailwindcss/vite": "^4.3.3",
     "@types/jszip": "^3.4.0",
     "@vitejs/plugin-react": "^6.1.1",

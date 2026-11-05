@@ -148,7 +148,7 @@ export default function App() {
     setScanErrorMessage(null);
 
     try {
-      const response = await fetch('/api/ocr-weights', {
+     const response = await fetch('https://ais-pre-rt3ihj4g6oxbskcxl7ppma-461989511480.asia-east1.run.app/api/ocr-weights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -158,7 +158,18 @@ export default function App() {
         }),
       });
 
-      const json = await response.json();
+      const responseText = await response.text();
+
+let json: any;
+
+try {
+  json = JSON.parse(responseText);
+} catch {
+  console.error('OCR Server Error:', responseText);
+  throw new Error(
+    OCR সার্ভার JSON পাঠায়নি। HTTP Status: ${response.status}
+  );
+}
 
       if (!response.ok || !json.success) {
         throw new Error(json.error || 'ছবি থেকে ওজন পড়া সম্ভব হয়নি।');
