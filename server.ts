@@ -34,9 +34,36 @@ function getGeminiClient() {
   });
 }
 
-// API endpoint for Handwritten Weight OCR
-app.post("/api/ocr-weights", async (req, res) => {
-  try {
+// Automatic retry for temporary Gemini errors
+async function generateWithRetry(request: any) {
+  const ai = getGeminiClient();
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await ai.models.generateContent(request);
+    } catch (error: any) {
+      const status = error?.status || error?.statusCode;
+      const message = String(error?.message || "");
+
+      const temporaryError =
+        status === 503 ||
+        status === 429 ||
+        status >= 500 ||
+        message.includes("UNAVAILABLE") ||
+        message.includes("RESOURCE_EXHAUSTED");
+
+      if (!temporaryError || attempt === 3) {
+        throw error;
+      }
+
+      await new Promise(resolve =>
+        setTimeout(resolve, attempt * 2000)
+      );
+    }
+  }
+
+  throw new Error("Gemini service unavailable");
+} {
     const { imageBase64, mimeType = "image/jpeg", hint } = req.body;
 
     if (!imageBase64) {
