@@ -23,8 +23,10 @@ app.use((req, res, next) => {
     return res.sendStatus(204);
   }
 
-  next();
-});const PORT = Number(process.env.PORT || 3000);
+    next();
+});
+
+const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json({ limit: "30mb" }));
 app.use(express.urlencoded({ extended: true, limit: "30mb" }));
