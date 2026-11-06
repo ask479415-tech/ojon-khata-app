@@ -43,8 +43,65 @@ function getGeminiClient() {
   return new GoogleGenAI({ apiKey });
 }
 
-// GEMINI RETRY
+
+// GEMINI RETRY WITH FALLBACK MODEL
 async function generateWithRetry(request: any) {
+  const ai = getGeminiClient();
+
+  const models = [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash"
+  ];
+
+  let lastError: any;
+
+  for (const model of models) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        console.log(`Trying model: ${model}, attempt: ${attempt}`);
+
+        return await ai.models.generateContent({
+          ...request,
+          model
+        });
+
+      } catch (error: any) {
+        lastError = error;
+
+        const status = Number(
+          error?.status ||
+          error?.statusCode ||
+          error?.error?.code ||
+          0
+        );
+
+        const message = String(error?.message || "");
+
+        const temporary =
+          status === 429 ||
+          status === 503 ||
+          status >= 500 ||
+          message.includes("UNAVAILABLE") ||
+          message.includes("RESOURCE_EXHAUSTED");
+
+        if (!temporary) {
+          throw error;
+        }
+
+        console.log(`Temporary Gemini error: ${message}`);
+
+        if (attempt < 2) {
+          await new Promise(resolve =>
+            setTimeout(resolve, 3000 * attempt)
+          );
+        }
+      }
+    }
+  }
+
+  throw lastError || new Error("Gemini service unavailable.");
+}
+
   const ai = getGeminiClient();
 
   for (let attempt = 1; attempt <= 3; attempt++) {
