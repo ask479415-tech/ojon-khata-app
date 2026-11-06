@@ -142,89 +142,11 @@ export default function App() {
   };
 
   // Perform Gemini OCR by calling server-side /api/ocr-weights
-  const processImageForOCR = async (dataUrl: string, sampleFallback?: number[]) => {
-    setCurrentImage(dataUrl);
-    setCurrentStep('scanning');
-    setScanErrorMessage(null);
-
-    try {
-     const response = await fetch('https://ojon-khata-app.onrender.com/api/ocr-weights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: dataUrl,
-          mimeType: 'image/jpeg',
-          hint: 'The user has written weights like 1.5, 2, 3.5 kg or ১.৫, ২, ৩.৫ কেজি on paper/diary/bag.',
-        }),
-      });
-
-      const responseText = await response.text();
-
-let json: any;
-
-try {
-  json = JSON.parse(responseText);
-} catch {
-  console.error('OCR Server Error:', responseText);
-    throw new Error("OCR Server JSON error. HTTP Status: " + response.status);
-}
-
-      if (!response.ok || !json.success) {
-        throw new Error(json.error || 'ছবি থেকে ওজন পড়া সম্ভব হয়নি।');
-      }
-
-      const extracted = json.data?.weights || [];
-
-      // Convert raw response items to rich WeightItem objects with local IDs
-      const mappedItems: WeightItem[] = extracted.map((item: any, idx: number): WeightItem => ({
-        id: `ocr-${Date.now()}-${idx}`,
-        value: typeof item.value === 'number' ? item.value : parseFloat(item.value) || 0,
-        originalText: item.originalText || `${item.value}`,
-        confidence: (['high', 'medium', 'low'].includes(item.confidence) ? item.confidence : 'high') as 'high' | 'medium' | 'low',
-        note: item.note || '',
-        isEdited: false,
-      }));
-
-      // If OCR yielded nothing and this was a known sample slip, use realistic fallback
-      if (mappedItems.length === 0 && sampleFallback && sampleFallback.length > 0) {
-        const fallbackItems: WeightItem[] = sampleFallback.map((val, i): WeightItem => ({
-          id: `sample-${Date.now()}-${i}`,
-          value: val,
-          originalText: `${val}`,
-          confidence: 'high' as const,
-          note: `নমুনা আইটেম #${i + 1}`,
-          isEdited: false,
-        }));
-        setCurrentWeights(fallbackItems);
-      } else {
-        setCurrentWeights(mappedItems);
-      }
-
-      setDetectedLanguage(json.data?.detectedLanguage || 'mixed');
-      setSummaryNote(json.data?.summaryNote || 'হাতে লেখা তালিকা থেকে সংখ্যা সনাক্ত করা হয়েছে। অনুগ্রহ করে যাচাই করুন।');
-      setCurrentStep('verifying');
-    } catch (err: any) {
-      console.error('OCR Processing error:', err);
-      if (sampleFallback && sampleFallback.length > 0) {
-        const fallbackItems: WeightItem[] = sampleFallback.map((val, i): WeightItem => ({
-          id: `sample-${Date.now()}-${i}`,
-          value: val,
-          originalText: `${val}`,
-          confidence: 'high' as const,
-          note: `নমুনা আইটেম #${i + 1}`,
-          isEdited: false,
-        }));
-        setCurrentWeights(fallbackItems);
-        setSummaryNote('নমুনা ডেটা লোড করা হয়েছে। আপনি সংখ্যাগুলো সরাসরি এডিট ও যোগ করতে পারেন।');
-        setCurrentStep('verifying');
-        return;
-      }
-
-      setScanErrorMessage(err.message || 'ছবি থেকে ওজন পড়া যায়নি। অনুগ্রহ করে পরিষ্কার ছবি দিয়ে চেষ্টা করুন।');
-      setCurrentStep('idle');
-    }
-  };
-
+  const processImageForOCR = async (dataUrl: string) => {
+  setCurrentImage(dataUrl);
+  setScanErrorMessage('ছবি পড়তে Camera অথবা Gallery অপশন ব্যবহার করুন।');
+  setCurrentStep('idle');
+};
   // Handle sample slip click
   const handleSelectSample = (sample: any) => {
   const mapped: WeightItem[] = sample.expectedWeights.map(
