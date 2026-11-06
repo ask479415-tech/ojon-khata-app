@@ -13,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
 // CORS CONFIGURATION
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -23,7 +24,7 @@ app.use((req, res, next) => {
     return res.sendStatus(204);
   }
 
-    next();
+  next();
 });
 
 const PORT = Number(process.env.PORT || 3000);
