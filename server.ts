@@ -44,7 +44,8 @@ function getGeminiClient() {
 }
 
 
-// GEMINI RETRY WITH FALLBACK MODEL
+
+ // GEMINI RETRY WITH FALLBACK MODEL
 async function generateWithRetry(request: any) {
   const ai = getGeminiClient();
 
@@ -100,35 +101,6 @@ async function generateWithRetry(request: any) {
   }
 
   throw lastError || new Error("Gemini service unavailable.");
-}
-
-  const ai = getGeminiClient();
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      return await ai.models.generateContent(request);
-    } catch (error: any) {
-      const status = Number(error?.status || error?.statusCode || 0);
-      const message = String(error?.message || "");
-
-      const temporary =
-        status === 429 ||
-        status === 503 ||
-        status >= 500 ||
-        message.includes("UNAVAILABLE") ||
-        message.includes("RESOURCE_EXHAUSTED");
-
-      if (!temporary || attempt === 3) {
-        throw error;
-      }
-
-      await new Promise(resolve =>
-        setTimeout(resolve, attempt * 2000)
-      );
-    }
-  }
-
-  throw new Error("Gemini service unavailable.");
 }
 
 // HEALTH CHECK
