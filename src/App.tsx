@@ -148,7 +148,7 @@ export default function App() {
     setScanErrorMessage(null);
 
     try {
-     const response = await fetch('https://ais-pre-rt3ihj4g6oxbskcxl7ppma-461989511480.asia-east1.run.app/api/ocr-weights', {
+     const response = await fetch('https://ojon-khata-app.onrender.com/api/ocr-weights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
