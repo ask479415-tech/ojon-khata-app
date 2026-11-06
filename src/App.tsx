@@ -480,7 +480,7 @@ try {
           {/* Logo & Title */}
           <button
             type="button"
-            onClick={() => setCurrentStep('idle')}
+            onClick={() => setIsCameraOpen(true)}
             className="flex items-center gap-2.5 text-left focus:outline-none group shrink-0"
           >
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-700 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-900/20 group-hover:scale-105 transition-transform">
