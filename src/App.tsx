@@ -175,7 +175,7 @@ export default function App() {
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
-        processImageForOCR(dataUrl);
+       setIsCameraOpen(true);
       }
     };
     reader.readAsDataURL(file);
