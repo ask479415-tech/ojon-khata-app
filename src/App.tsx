@@ -226,11 +226,24 @@ try {
   };
 
   // Handle sample slip click
-  const handleSelectSample = (sample: SampleSlip) => {
-    const dataUrl = sample.generateDataUrl();
-    processImageForOCR(dataUrl, sample.expectedWeights);
-  };
+  const handleSelectSample = (sample: any) => {
+  const mapped: WeightItem[] = sample.expectedWeights.map(
+    (value: number, index: number) => ({
+      id: `sample-${Date.now()}-${index}`,
+      value,
+      originalText: String(value),
+      confidence: 'high',
+      note: '',
+      isEdited: false,
+    })
+  );
 
+  setCurrentImage(null);
+  setCurrentWeights(mapped);
+  setDetectedLanguage('mixed');
+  setSummaryNote('Sample থেকে Offline হিসাব তৈরি হয়েছে।');
+  setCurrentStep('verifying');
+};
   // Handle local gallery upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
