@@ -403,11 +403,26 @@ try {
       />
 
       {/* Camera Capture Modal */}
-      <CameraModal
-        isOpen={isCameraOpen}
-        onClose={() => setIsCameraOpen(false)}
-        onCapture={(dataUrl) => processImageForOCR(dataUrl)}
-      />
+     <CameraModal
+  isOpen={isCameraOpen}
+  onClose={() => setIsCameraOpen(false)}
+  onCapture={(detected) => {
+    const mapped: WeightItem[] = detected.map((item, index) => ({
+      id: `offline-${Date.now()}-${index}`,
+      value: item.value,
+      originalText: item.originalText,
+      confidence: 'high',
+      note: '',
+      isEdited: false,
+    }));
+
+    setCurrentImage(null);
+    setCurrentWeights(mapped);
+    setDetectedLanguage('mixed');
+    setSummaryNote('ফোনে Offline ML Kit দিয়ে ওজন শনাক্ত করা হয়েছে। যোগ করার আগে যাচাই করুন।');
+    setCurrentStep('verifying');
+  }}
+/>
 
       {/* History Drawer */}
       <HistoryDrawer
